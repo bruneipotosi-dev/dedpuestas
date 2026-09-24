@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Dedpuestas · Design tokens
+   Fuente: diseño v0.4 (design/dedpuestas-v0.4.html) · aprobado 24/09/2026
+   Los colores son los de la ruleta de Dedsafio 4, como identidad visual.
+   Cada color tiene UN significado y 4 tonos:
+     500 rellenos y barras · 300 texto sobre negro (AA) · 700 bordes · 900 fondos suaves
+   El 90 % de la interfaz es neutra: el color aparece solo cuando dice algo.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Barlow:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: dark;
+
+  /* ---------- Paleta base (la ruleta) ---------- */
+  --pink-500: #ff0aa0;  --pink-300: #fc9bc5;  --pink-700: #7f2653;  --pink-900: #340b20;
+  --red-500: #ee0204;   --red-300: #ff5f4f;   --red-700: #86281f;   --red-900: #370c08;
+  --green-500: #24d724; --green-300: #4fe04a; --green-700: #125e10; --green-900: #042503;
+  --yellow-500: #fbef0f;--yellow-300: #fbef0f;--yellow-700: #544f06;--yellow-900: #201e00;
+  --orange-500: #fb7504;--orange-300: #fca676;--orange-700: #7b3601;--orange-900: #331100;
+  --blue-500: #0048ff;  --blue-300: #9dbefd;  --blue-700: #264893;  --blue-900: #0b1b3d;
+  --purple-500: #b040b0;--purple-300: #ee9ceb;--purple-700: #712d70;--purple-900: #2d0e2d;
+  --cyan-500: #0cddfb;  --cyan-300: #29d4ef;  --cyan-700: #095763;  --cyan-900: #002228;
+
+  /* ---------- Neutros ---------- */
+  --bg: #000000;
+  --surface: #161616;
+  --line: #343434;
+  --text: #ffffff;
+  --text-2: #a8a8a8;
+
+  /* ---------- Semántica (usar SIEMPRE estos en componentes) ---------- */
+  /* Marca: solo logo, enlaces y foco de teclado (decisión 24/09) */
+  --brand: var(--pink-500);
+  --brand-text: var(--pink-300);
+  --focus: var(--pink-500);
+  /* Selección (chip activo, tarjeta activa): blanco, no rosa (decisión 24/09) */
+  --selected-bg: var(--text);
+  --selected-text: var(--bg);
+
+  /* Bandos */
+  --die: var(--red-500);        --die-text: var(--red-300);
+  --die-border: var(--red-700); --die-soft: var(--red-900);
+  --live: var(--green-500);     --live-text: var(--green-300);
+  --live-border: var(--green-700); --live-soft: var(--green-900);
+
+  /* Moneda y dinero virtual: saldo, bote, ganancia, bono, cuenta atrás < 12 h */
+  --dedines: var(--yellow-500); --dedines-border: var(--yellow-700); --dedines-soft: var(--yellow-900);
+
+  /* Gulag y avisos; cuenta atrás < 1 h */
+  --gulag: var(--orange-500);   --gulag-text: var(--orange-300);
+  --gulag-border: var(--orange-700); --gulag-soft: var(--orange-900);
+
+  /* Pendiente: apuestas abiertas, etiquetas informativas */
+  --pending: var(--blue-500);   --pending-text: var(--blue-300);
+  --pending-border: var(--blue-700); --pending-soft: var(--blue-900);
+
+  /* Errores = mismo rojo que Muere */
+  --error: var(--red-500);      --error-text: var(--red-300);
+
+  /* Equipos: solo Mafia y Minitas tienen color; el resto, neutro (decisión 24/09) */
+  --team-mafia: var(--purple-500);   --team-mafia-text: var(--purple-300);
+  --team-minitas: var(--cyan-500);   --team-minitas-text: var(--cyan-300);
+  --team-other: var(--line);         --team-other-text: var(--text-2);
+
+  /* Franja de administración */
+  --admin: var(--purple-500);
+
+  /* Dedín: la rueda entera, SOLO en el icono de la moneda */
+  --dedin-wheel: conic-gradient(
+    var(--pink-500) 0 12.5%, var(--purple-500) 0 25%, var(--blue-500) 0 37.5%,
+    var(--cyan-500) 0 50%, var(--green-500) 0 62.5%, var(--yellow-500) 0 75%,
+    var(--orange-500) 0 87.5%, var(--red-500) 0 100%);
+
+  /* ---------- Tipografía ---------- */
+  --font-display: "Pixelify Sans", "Courier New", monospace; /* logo, títulos, números grandes */
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;  /* todo lo demás */
+  --font-mono: ui-monospace, monospace;
+  --fs-xs: 11px; --fs-sm: 13px; --fs-md: 15px; --fs-lg: 18px;
+  --fs-xl: 24px; --fs-2xl: 32px; --fs-hero: 64px;
+
+  /* ---------- Radios ---------- */
+  --r-xs: 2px;  /* barras */
+  --r-sm: 3px;  /* pills, etiquetas */
+  --r-md: 6px;  /* botones pequeños, inputs */
+  --r-lg: 8px;  /* botones */
+  --r-xl: 12px; /* tarjetas */
+  --r-2xl: 14px;/* hojas, paneles */
+
+  /* ---------- Espaciado (múltiplos de 4) ---------- */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+
+  /* ---------- Layout ---------- */
+  --mobile-min: 360px;
+  --desktop: 1440px;
+}
+
+/* Números alineados en saldos, botes, porcentajes y ranking */
+.num { font-variant-numeric: tabular-nums; }
