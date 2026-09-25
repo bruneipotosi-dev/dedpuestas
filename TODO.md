@@ -1,32 +1,34 @@
-# TODO — piezas que escribís vos
+# TODO — piezas pendientes
 
-Según "Modo aprendizaje" en `CLAUDE.md`, estas dos las escribís vos; acá van pistas, no el código.
+## Hecho
+- ✅ `Dockerfile` — lo escribiste vos, lo revisamos y terminamos juntos.
+- ✅ `.github/workflows/ci.yml` — lint, build, typecheck, tests (Vitest +
+  Testcontainers), y en `main` build+push multi-arch a GHCR.
 
-## 1. `Dockerfile`
+## Pendiente (necesita accesos que no tengo: tu servidor, tu cuenta de Oracle Cloud, tu Tailscale)
 
-Objetivo: imagen de producción multi-arch (amd64 + arm64) para `app` (Next.js standalone), que reemplace el servicio `app` de `compose.yaml` (hoy usa `node:22-alpine` genérico + volumen, sin build propio).
+### 1. Requerir el check `ci` en el ruleset de `main`
+Ya existe el workflow; falta activarlo en la protección de rama (paso 3 del KICKOFF que quedó pendiente):
+GitHub → Settings → Rules → Rulesets → `main-protection` → Require status checks to pass → agregar `test` (el job de `ci.yml`).
 
-Pistas:
-- Activá `output: "standalone"` en `next.config.ts` — genera `.next/standalone` con solo lo necesario para correr, sin `node_modules` completo.
-- Build **multi-stage**: una etapa `deps` (instala dependencias), una `builder` (`npm run build`), una `runner` final copiando solo `.next/standalone`, `.next/static` y `public/`.
-- La etapa final corre como usuario **no root** (`USER node` o creá uno) y expone el puerto 3000.
-- No necesitás `prisma` ni el código fuente completo en la imagen final: las migraciones corren aparte (paso de CI/CD o `docker compose exec`), no dentro del contenedor de la app en cada arranque.
-- Referencia oficial: https://nextjs.org/docs/app/getting-started/deploying#docker (sección Dockerfile del propio Next.js).
-- Cuando lo tengas, en `compose.yaml` cambiá el servicio `app` de `image: node:22-alpine` + `command` a `build: .` (o `build: { context: ., dockerfile: Dockerfile }`).
+### 2. Deploy a staging/producción
+El workflow de CI construye y publica la imagen a `ghcr.io/<usuario>/dedpuestas`, pero no la despliega — eso necesita:
+- Acceso SSH a tu servidor casero vía Tailscale (no tengo tus credenciales ni acceso a tu red).
+- Un `compose.yaml` de producción (o un job de deploy) que haga `docker pull` + `docker compose up -d` con la imagen nueva.
+- Secrets en GitHub Actions: probablemente un token de Tailscale y la ubicación del servidor.
 
-## 2. Workflow de CI (`.github/workflows/ci.yml`)
+Pista concreta: un job `deploy-staging` (automático al mergear a `main`, según `docs/03-arquitectura.md`) que se conecte por Tailscale SSH Action (`tailscale/github-action`) y corra el pull+up en el servidor. `deploy-production` igual pero con `environment: production` y aprobación manual en GitHub (Settings → Environments → Required reviewers).
 
-Objetivo: en cada push/PR — lint, typecheck, tests (con Postgres para los de integración), build; en `main`, además publicar la imagen multi-arch a GHCR.
+### 3. Terraform (primer módulo)
+Según `CLAUDE.md`, esto lo escribís vos con guía. Tiene sentido esperar a que Oracle Cloud apruebe la cuenta (brief: "Aprobación de Oracle lenta") antes de escribirlo, ya que hoy no hay nada que provisionar todavía (todo corre en tu servidor casero).
 
-Pistas:
-- Job 1 (`test`): checkout → `actions/setup-node` → `npm ci` → `npm run lint` → `npm run build` (necesario antes de `npm run typecheck` porque genera `.next/types`) → `npm run typecheck` → `npm test`.
-  - Para los tests que tocan Postgres (saldo/mercados, RNF-2), usá un `services: postgres:` en el job (imagen `postgres:17-alpine`) o Testcontainers, con las mismas env vars que `compose.yaml`.
-- Job 2 (`build-and-push`, solo en `main`, `needs: test`): `docker/setup-qemu-action` + `docker/setup-buildx-action` + `docker/build-push-action` con `platforms: linux/amd64,linux/arm64` → GHCR (`ghcr.io/<usuario>/dedpuestas`). Necesita el `Dockerfile` del punto 1.
-- Referencia oficial: https://docs.github.com/actions/publishing-packages/publishing-docker-images
-- Recordá activar "Require status checks to pass" con el check `ci` en el ruleset de `main` (paso 3 del KICKOFF) una vez que el workflow exista.
+### 4. Ansible (primer playbook)
+Mismo caso: esperá a tener claro qué configurar en el servidor de producción antes de automatizarlo.
 
-## Notas de esta rama (`chore/scaffold`)
+## Notas de decisiones tomadas
 
-- Se movió `prisma` (CLI) a `devDependencies`; `@prisma/client` queda en `dependencies` porque sí corre en producción.
-- `prisma@6.19.3` en vez de `latest` (8.0.0-rc.x): la 8.x es release candidate y trae dependencias con vulnerabilidades de dev. La 6.19.3 tiene una vulnerabilidad "alta" heredada en `deepmerge-ts` (usada por `@prisma/config` al fusionar config), pero es solo de la CLI —no corre en producción ni procesa input de usuarios de la web—, así que el riesgo real es bajo. Si preferís cerrarla del todo, la alternativa sin ella es bajar a `prisma@6.12.0` (`npm audit fix --force`).
-- El modelo `Player` en `prisma/schema.prisma` agrega `avatarUrl`, `trackerStreamerSlug` y `eliminatedAt` sobre lo que dice `docs/03-arquitectura.md` (que es "primera versión"), porque el seed y HU-10/HU-31 los necesitan.
+- `prisma` (CLI) en `devDependencies`; `@prisma/client` en `dependencies` (corre en producción).
+- `prisma@6.19.3` en vez de `latest` (8.0.0-rc.x es release candidate). Tiene una vulnerabilidad "alta" heredada en `deepmerge-ts` (de la CLI, no corre en producción); alternativa sin ella: bajar a `prisma@6.12.0`.
+- El modelo `Player` agrega `avatarUrl`, `trackerStreamerSlug` y `eliminatedAt` sobre lo que dice `docs/03-arquitectura.md` (HU-10/HU-31 los necesitan).
+- Turnstile: sin `TURNSTILE_SECRET_KEY`/`NEXT_PUBLIC_TURNSTILE_SITE_KEY` configuradas, la verificación se omite (modo dev) — no hay dominio en Cloudflare todavía.
+- Sin tests e2e con Playwright todavía (la cobertura es de integración con Vitest + Postgres real vía Testcontainers).
