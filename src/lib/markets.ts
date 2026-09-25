@@ -5,6 +5,9 @@ import { nextMarketCloseGmt6 } from "@/lib/time";
 
 export const MIN_BET = 10n;
 
+// Fin de temporada (data/seed-dedsafio4.json: endDate 2026-10-17, GMT-6).
+const SEASON_END_GMT6 = new Date("2026-10-17T21:00:00.000Z"); // 15:00 GMT-6
+
 type MarketTemplate = {
   type: string;
   status: Prisma.PlayerWhereInput["status"];
@@ -72,9 +75,56 @@ export async function createGulagMarkets(): Promise<{ created: number }> {
   });
 }
 
+/**
+ * Mercado por equipo (HU-14): una sola pregunta, un outcome por equipo.
+ * Cierra al final de la temporada (ver data/seed-dedsafio4.json).
+ */
+export async function createTeamSurvivalMarket(): Promise<{ created: boolean }> {
+  const existingOpen = await prisma.market.findFirst({
+    where: { type: "equipo_sobrevive", status: "open" },
+  });
+  if (existingOpen) return { created: false };
+
+  const teams = await prisma.team.findMany({ orderBy: { name: "asc" } });
+  if (teams.length === 0) return { created: false };
+
+  const market = await prisma.market.create({
+    data: {
+      type: "equipo_sobrevive",
+      question: "¿Qué equipo tendrá más sobrevivientes al final de la temporada?",
+      closesAt: SEASON_END_GMT6,
+    },
+  });
+  await prisma.outcome.createMany({
+    data: teams.map((team, i) => ({ marketId: market.id, label: team.name, sort: i })),
+  });
+  return { created: true };
+}
+
+/** Mercado "más/menos" (HU-15): el admin define N y a qué se refiere. */
+export async function createDeathCountMarket(
+  threshold: number,
+  question: string,
+  closesAt: Date,
+): Promise<{ created: boolean; error?: string }> {
+  if (!Number.isInteger(threshold) || threshold < 0) {
+    return { created: false, error: "El número tiene que ser un entero positivo." };
+  }
+  const market = await prisma.market.create({
+    data: { type: "muertes_mas_menos", question, closesAt },
+  });
+  await prisma.outcome.createMany({
+    data: [
+      { marketId: market.id, label: `Más de ${threshold}`, sort: 0 },
+      { marketId: market.id, label: `${threshold} o menos`, sort: 1 },
+    ],
+  });
+  return { created: true };
+}
+
 export async function listMarketsForAdmin() {
   return prisma.market.findMany({
-    include: { player: true, outcomes: true },
+    include: { player: { include: { team: true } }, outcomes: true },
     orderBy: { closesAt: "desc" },
   });
 }

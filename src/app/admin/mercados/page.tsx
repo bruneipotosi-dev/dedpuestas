@@ -1,6 +1,11 @@
 import { listMarketsForAdmin } from "@/lib/markets";
-import { createWeeklyMarketsAction, createGulagMarketsAction } from "@/app/admin/actions";
+import {
+  createWeeklyMarketsAction,
+  createGulagMarketsAction,
+  createTeamSurvivalMarketAction,
+} from "@/app/admin/actions";
 import { ResolveMarketForm } from "@/components/admin/resolve-market-form";
+import { DeathCountMarketForm } from "@/components/admin/death-count-market-form";
 
 export const metadata = { title: "Mercados · Admin · Dedpuestas" };
 
@@ -53,8 +58,26 @@ export default async function AdminMercadosPage() {
               Crear mercados de la semana
             </button>
           </form>
+          <form action={createTeamSurvivalMarketAction}>
+            <button
+              type="submit"
+              style={{
+                background: "var(--pending)",
+                color: "var(--bg)",
+                border: "none",
+                borderRadius: "var(--r-lg)",
+                padding: "var(--s-2) var(--s-3)",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Crear mercado por equipo
+            </button>
+          </form>
         </div>
       </div>
+
+      <DeathCountMarketForm />
 
       <section>
         <h2 style={{ fontSize: "var(--fs-lg)", marginBottom: "var(--s-2)" }}>Abiertos / cerrados</h2>

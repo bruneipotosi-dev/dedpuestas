@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPlayerProfile } from "@/lib/players";
+import { getCurrentUser } from "@/lib/session";
+import { ReportForm } from "./report-form";
 
 const statusLabel: Record<string, string> = { alive: "Vivo", gulag: "Gulag", eliminated: "Eliminado" };
 
@@ -27,7 +29,7 @@ export async function generateMetadata({
 
 export default async function JugadorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const profile = await getPlayerProfile(slug);
+  const [profile, user] = await Promise.all([getPlayerProfile(slug), getCurrentUser()]);
   if (!profile) notFound();
 
   const { player, sentiment } = profile;
@@ -68,6 +70,8 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
       ) : (
         <p style={{ color: "var(--text-2)" }}>Todavía no hay apuestas abiertas sobre {player.nick}.</p>
       )}
+
+      {user && <ReportForm playerId={player.id} />}
     </main>
   );
 }
