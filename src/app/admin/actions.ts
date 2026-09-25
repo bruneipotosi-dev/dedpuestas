@@ -2,9 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
-import { createWeeklyMarkets, createGulagMarkets, resolveMarket, voidMarket } from "@/lib/markets";
+import {
+  createWeeklyMarkets,
+  createGulagMarkets,
+  createTeamSurvivalMarket,
+  createDeathCountMarket,
+  resolveMarket,
+  voidMarket,
+} from "@/lib/markets";
 import { updatePlayerStatus, setPlayerOptedOut } from "@/lib/admin/players";
 import { resetUserPassword } from "@/lib/admin/users";
+import { markReportReviewed } from "@/lib/admin/reports";
 import type { PlayerStatus } from "@/generated/prisma/client";
 
 export async function createWeeklyMarketsAction(): Promise<void> {
@@ -19,6 +27,44 @@ export async function createGulagMarketsAction(): Promise<void> {
   await createGulagMarkets();
   revalidatePath("/admin/mercados");
   revalidatePath("/");
+}
+
+export async function createTeamSurvivalMarketAction(): Promise<void> {
+  await requireAdmin();
+  await createTeamSurvivalMarket();
+  revalidatePath("/admin/mercados");
+  revalidatePath("/");
+}
+
+export type DeathCountFormState = { error: string | null };
+
+export async function createDeathCountMarketAction(
+  _prev: DeathCountFormState,
+  formData: FormData,
+): Promise<DeathCountFormState> {
+  await requireAdmin();
+
+  const threshold = Number(formData.get("threshold"));
+  const question = String(formData.get("question") ?? "").trim();
+  const closesAtRaw = String(formData.get("closesAt") ?? "");
+  const closesAt = new Date(closesAtRaw);
+
+  if (!question) return { error: "Falta la pregunta." };
+  if (Number.isNaN(closesAt.getTime())) return { error: "Fecha de cierre inválida." };
+
+  const result = await createDeathCountMarket(threshold, question, closesAt);
+  if (!result.created) return { error: result.error ?? "No se pudo crear el mercado." };
+
+  revalidatePath("/admin/mercados");
+  revalidatePath("/");
+  return { error: null };
+}
+
+export async function markReportReviewedAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const reportId = String(formData.get("reportId") ?? "");
+  await markReportReviewed(reportId);
+  revalidatePath("/admin/reportes");
 }
 
 export type ResolveFormState = { error: string | null };

@@ -62,22 +62,30 @@ export default async function MisApuestasPage() {
               <div>
                 <div>{bet.outcome.market.question}</div>
                 <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
-                  {bet.outcome.market.player.nick} · Apostaste a &quot;{bet.outcome.label}&quot; ·{" "}
-                  <span className="num">{bet.amount.toString()}</span> Dedines
+                  {bet.outcome.market.player && <>{bet.outcome.market.player.nick} · </>}
+                  Apostaste a &quot;{bet.outcome.label}&quot; · <span className="num">{bet.amount.toString()}</span>{" "}
+                  Dedines
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "var(--s-1)" }}>
                 <span style={{ color: result.color, fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }} className="num">
                   {result.text}
                 </span>
-                <a
-                  href={shareUrl(origin, bet.outcome.market.player.slug, bet.outcome.market.question, bet.outcome.label)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: "var(--fs-xs)", color: "var(--brand-text)" }}
-                >
-                  Compartir en X
-                </a>
+                {bet.outcome.market.player && (
+                  <a
+                    href={shareUrl(
+                      origin,
+                      bet.outcome.market.player.slug,
+                      bet.outcome.market.question,
+                      bet.outcome.label,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "var(--fs-xs)", color: "var(--brand-text)" }}
+                  >
+                    Compartir en X
+                  </a>
+                )}
               </div>
             </article>
           );

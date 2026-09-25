@@ -39,8 +39,8 @@ export default async function Home({
   const canRescue = user && balance !== null ? await canClaimWeeklyRescue(user.id, balance) : false;
 
   const filtered = markets.filter((m) => {
-    if (teamFilter && m.player.teamId !== teamFilter) return false;
-    if (q && !m.player.nick.toLowerCase().includes(q.toLowerCase())) return false;
+    if (teamFilter && m.player?.teamId !== teamFilter) return false;
+    if (q && !m.player?.nick.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
@@ -127,10 +127,16 @@ export default async function Home({
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--s-2)" }}>
                 <div>
-                  <strong>{market.player.nick}</strong>{" "}
-                  <span style={{ color: teamColor(market.player.teamId), fontSize: "var(--fs-xs)" }}>
-                    {market.player.team?.name ?? "Sin equipo"}
-                  </span>
+                  {market.player ? (
+                    <>
+                      <strong>{market.player.nick}</strong>{" "}
+                      <span style={{ color: teamColor(market.player.teamId), fontSize: "var(--fs-xs)" }}>
+                        {market.player.team?.name ?? "Sin equipo"}
+                      </span>
+                    </>
+                  ) : (
+                    <strong>Dedsafio 4</strong>
+                  )}
                 </div>
                 <span style={{ fontSize: "var(--fs-xs)", color: "var(--pending-text)" }}>
                   Cierra en {closesInH}h

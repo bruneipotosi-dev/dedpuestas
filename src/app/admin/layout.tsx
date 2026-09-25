@@ -31,6 +31,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin/usuarios" style={{ color: "var(--text)" }}>
           Usuarios
         </Link>
+        <Link href="/admin/reportes" style={{ color: "var(--text)" }}>
+          Reportes
+        </Link>
       </nav>
       {children}
     </main>

@@ -15,6 +15,9 @@ export default function AdminHomePage() {
       <Link href="/admin/usuarios" style={{ color: "var(--brand-text)" }}>
         Usuarios (restablecer contraseña) →
       </Link>
+      <Link href="/admin/reportes" style={{ color: "var(--brand-text)" }}>
+        Reportes de la comunidad →
+      </Link>
     </div>
   );
 }

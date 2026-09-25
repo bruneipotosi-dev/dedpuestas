@@ -62,6 +62,7 @@ model User {
   sessions       Session[]
   ledgerEntries  LedgerEntry[]
   bets           Bet[]
+  reports        Report[]
 
   @@map("users")
 }
@@ -118,13 +119,17 @@ model Player {
 
   team    Team?    @relation(fields: [teamId], references: [id])
   markets Market[]
+  reports Report[]
 
   @@map("players")
 }
 
+// playerId es opcional: "¿X muere esta semana?" / "¿X sale del Gulag?" tienen
+// jugador; "¿qué equipo sobrevive?" (HU-14, outcomes = los equipos) y "¿más
+// de N muertes?" (HU-15) no son sobre un jugador puntual.
 model Market {
   id                String       @id @default(uuid())
-  playerId          Int          @map("player_id")
+  playerId          Int?         @map("player_id")
   type              String
   question          String
   closesAt          DateTime     @map("closes_at")
@@ -132,7 +137,7 @@ model Market {
   winningOutcomeId  String?      @unique @map("winning_outcome_id")
   proofUrl          String?      @map("proof_url")
 
-  player        Player        @relation(fields: [playerId], references: [id])
+  player        Player?       @relation(fields: [playerId], references: [id])
   outcomes      Outcome[]      @relation("MarketOutcomes")
   winningOutcome Outcome?      @relation("MarketWinningOutcome", fields: [winningOutcomeId], references: [id])
   ledgerEntries LedgerEntry[]
@@ -170,6 +175,26 @@ model Bet {
   @@index([userId])
   @@index([outcomeId])
   @@map("bets")
+}
+
+// Reportes de la comunidad (HU-32): un fan avisa una muerte con un link al
+// clip, para ayudar al admin a resolver mercados. No cambia nada solo; el
+// admin lo revisa y decide.
+model Report {
+  id        String   @id @default(uuid())
+  playerId  Int      @map("player_id")
+  userId    String   @map("user_id")
+  clipUrl   String   @map("clip_url")
+  note      String?
+  reviewed  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  player Player @relation(fields: [playerId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([playerId])
+  @@index([reviewed])
+  @@map("reports")
 }
 
 // Libro de movimientos inmutable (RN-8): nunca se hace UPDATE/DELETE sobre esta
