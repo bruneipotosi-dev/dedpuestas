@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/session";
 import { placeBet, MIN_BET } from "@/lib/markets";
-import { claimDailyBonus } from "@/lib/bonus";
+import { claimDailyBonus, claimWeeklyRescue } from "@/lib/bonus";
 
 export type BetActionState = { error: string | null; success?: boolean };
 
@@ -47,5 +47,11 @@ export type BonusActionState = { error: string | null };
 export async function claimBonusAction(): Promise<void> {
   const user = await requireUser();
   await claimDailyBonus(user.id);
+  revalidatePath("/");
+}
+
+export async function claimWeeklyRescueAction(): Promise<void> {
+  const user = await requireUser();
+  await claimWeeklyRescue(user.id);
   revalidatePath("/");
 }

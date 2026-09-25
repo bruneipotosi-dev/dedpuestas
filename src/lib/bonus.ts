@@ -5,7 +5,9 @@ import { startOfTodayGmt6 } from "@/lib/time";
 const DAILY_BONUS = 100n;
 const WEEKLY_RESCUE = 200n;
 
-export type ClaimResult = { ok: true } | { ok: false; reason: "already_claimed" };
+export type ClaimResult =
+  | { ok: true }
+  | { ok: false; reason: "already_claimed" | "balance_not_zero" };
 
 /**
  * Bono diario (HU-02). Bloquea la fila del usuario para que dos clics
@@ -36,21 +38,20 @@ export async function hasClaimedToday(userId: string): Promise<boolean> {
   return entry !== null;
 }
 
-/**
- * Rescate semanal (HU-03, v1): 200 Dedines una vez por semana si el saldo
- * llegó a cero. No se usa todavía en el MVP; queda listo para HU-03.
- */
-export async function claimWeeklyRescue(userId: string): Promise<ClaimResult> {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+function weekAgo(): Date {
+  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+}
 
+/** Rescate semanal (HU-03): 200 Dedines una vez por semana si el saldo llegó a cero. */
+export async function claimWeeklyRescue(userId: string): Promise<ClaimResult> {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
 
     const sum = await tx.ledgerEntry.aggregate({ where: { userId }, _sum: { delta: true } });
-    if ((sum._sum.delta ?? 0n) > 0n) return { ok: false, reason: "already_claimed" };
+    if ((sum._sum.delta ?? 0n) > 0n) return { ok: false, reason: "balance_not_zero" };
 
     const lastRescue = await tx.ledgerEntry.findFirst({
-      where: { userId, reason: "weekly_rescue", createdAt: { gte: weekAgo } },
+      where: { userId, reason: "weekly_rescue", createdAt: { gte: weekAgo() } },
     });
     if (lastRescue) return { ok: false, reason: "already_claimed" };
 
@@ -59,4 +60,13 @@ export async function claimWeeklyRescue(userId: string): Promise<ClaimResult> {
     });
     return { ok: true };
   });
+}
+
+/** Para decidir si mostrar el botón de rescate: saldo en cero y no reclamado en 7 días. */
+export async function canClaimWeeklyRescue(userId: string, balance: bigint): Promise<boolean> {
+  if (balance > 0n) return false;
+  const lastRescue = await prisma.ledgerEntry.findFirst({
+    where: { userId, reason: "weekly_rescue", createdAt: { gte: weekAgo() } },
+  });
+  return lastRescue === null;
 }

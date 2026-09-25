@@ -1,5 +1,5 @@
 import { listPlayersForAdmin } from "@/lib/admin/players";
-import { updatePlayerStatusAction } from "@/app/admin/actions";
+import { updatePlayerStatusAction, setPlayerOptedOutAction } from "@/app/admin/actions";
 
 export const metadata = { title: "Jugadores · Admin · Dedpuestas" };
 
@@ -43,6 +43,7 @@ export default async function AdminJugadoresPage() {
               <strong>{player.nick}</strong>{" "}
               <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
                 {player.team?.name ?? "Sin equipo"} · {statusLabel[player.status]}
+                {player.optedOut && <span style={{ color: "var(--gulag-text)" }}> · Retirado (HU-24)</span>}
               </span>
             </div>
             <div style={{ display: "flex", gap: "var(--s-2)" }}>
@@ -66,6 +67,24 @@ export default async function AdminJugadoresPage() {
                   </button>
                 </form>
               ))}
+              <form action={setPlayerOptedOutAction}>
+                <input type="hidden" name="playerId" value={player.id} />
+                <input type="hidden" name="optedOut" value={(!player.optedOut).toString()} />
+                <button
+                  type="submit"
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--line)",
+                    color: "var(--text-2)",
+                    borderRadius: "var(--r-md)",
+                    padding: "var(--s-1) var(--s-2)",
+                    fontSize: "var(--fs-xs)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {player.optedOut ? "Quitar retiro" : "Marcar retirado (HU-24)"}
+                </button>
+              </form>
             </div>
           </div>
         ))}

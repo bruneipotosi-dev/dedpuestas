@@ -2,10 +2,11 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { getUserBalance } from "@/lib/ledger";
 import { getOpenMarkets } from "@/lib/markets";
-import { hasClaimedToday } from "@/lib/bonus";
+import { hasClaimedToday, canClaimWeeklyRescue } from "@/lib/bonus";
 import { prisma } from "@/lib/prisma";
 import { BetForm } from "@/components/bet-form";
 import { DailyBonusButton } from "@/components/daily-bonus-button";
+import { WeeklyRescueButton } from "@/components/weekly-rescue-button";
 
 function teamColor(teamId: string | null | undefined): string {
   if (teamId === "team-mafia") return "var(--team-mafia-text)";
@@ -35,6 +36,7 @@ export default async function Home({
     user ? hasClaimedToday(user.id) : Promise.resolve(false),
     prisma.team.findMany({ orderBy: { name: "asc" } }),
   ]);
+  const canRescue = user && balance !== null ? await canClaimWeeklyRescue(user.id, balance) : false;
 
   const filtered = markets.filter((m) => {
     if (teamFilter && m.player.teamId !== teamFilter) return false;
@@ -45,8 +47,13 @@ export default async function Home({
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "var(--s-4)", width: "100%" }}>
       {user && !claimedToday && (
-        <div style={{ marginBottom: "var(--s-4)" }}>
+        <div style={{ marginBottom: "var(--s-2)" }}>
           <DailyBonusButton />
+        </div>
+      )}
+      {canRescue && (
+        <div style={{ marginBottom: "var(--s-4)" }}>
+          <WeeklyRescueButton />
         </div>
       )}
 

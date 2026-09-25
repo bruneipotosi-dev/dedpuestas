@@ -5,42 +5,71 @@ import { nextMarketCloseGmt6 } from "@/lib/time";
 
 export const MIN_BET = 10n;
 
-/**
- * Botón "Crear mercados de la semana" (HU-30): genera "¿Muere esta semana?"
- * para todos los jugadores vivos que todavía no tengan uno abierto, con
- * cierre por defecto a las 15:00 GMT-6 (RN-6).
- */
-export async function createWeeklyMarkets(): Promise<{ created: number }> {
-  const alivePlayers = await prisma.player.findMany({ where: { status: "alive" } });
+type MarketTemplate = {
+  type: string;
+  status: Prisma.PlayerWhereInput["status"];
+  question: (nick: string) => string;
+  outcomes: [string, string];
+};
+
+async function createMarketsForTemplate(template: MarketTemplate): Promise<{ created: number }> {
+  // RN: un jugador retirado (HU-24, optedOut) no recibe mercados nuevos.
+  const players = await prisma.player.findMany({
+    where: { status: template.status, optedOut: false },
+  });
   const closesAt = nextMarketCloseGmt6();
 
   const existingOpen = await prisma.market.findMany({
-    where: { type: "muere_semana", status: "open", playerId: { in: alivePlayers.map((p) => p.id) } },
+    where: { type: template.type, status: "open", playerId: { in: players.map((p) => p.id) } },
     select: { playerId: true },
   });
   const alreadyHasMarket = new Set(existingOpen.map((m) => m.playerId));
 
   let created = 0;
-  for (const player of alivePlayers) {
+  for (const player of players) {
     if (alreadyHasMarket.has(player.id)) continue;
     const market = await prisma.market.create({
       data: {
         playerId: player.id,
-        type: "muere_semana",
-        question: `¿${player.nick} muere esta semana?`,
+        type: template.type,
+        question: template.question(player.nick),
         closesAt,
       },
     });
     await prisma.outcome.createMany({
       data: [
-        { marketId: market.id, label: "Muere", sort: 0 },
-        { marketId: market.id, label: "Sobrevive", sort: 1 },
+        { marketId: market.id, label: template.outcomes[0], sort: 0 },
+        { marketId: market.id, label: template.outcomes[1], sort: 1 },
       ],
     });
     created++;
   }
 
   return { created };
+}
+
+/**
+ * Botón "Crear mercados de la semana" (HU-30): genera "¿Muere esta semana?"
+ * para todos los jugadores vivos que todavía no tengan uno abierto, con
+ * cierre por defecto a las 15:00 GMT-6 (RN-6).
+ */
+export async function createWeeklyMarkets(): Promise<{ created: number }> {
+  return createMarketsForTemplate({
+    type: "muere_semana",
+    status: "alive",
+    question: (nick) => `¿${nick} muere esta semana?`,
+    outcomes: ["Muere", "Sobrevive"],
+  });
+}
+
+/** Mercados del Gulag (HU-13): para todos los jugadores que están en el Gulag. */
+export async function createGulagMarkets(): Promise<{ created: number }> {
+  return createMarketsForTemplate({
+    type: "sale_gulag",
+    status: "gulag",
+    question: (nick) => `¿${nick} sale del Gulag?`,
+    outcomes: ["Sale", "Se queda"],
+  });
 }
 
 export async function listMarketsForAdmin() {
