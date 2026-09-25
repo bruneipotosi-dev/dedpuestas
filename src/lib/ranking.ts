@@ -20,6 +20,10 @@ export async function getRanking(limit = 100): Promise<RankingEntry[]> {
       username: usernameById.get(t.userId)!,
       balance: t._sum.delta ?? 0n,
     }))
-    .sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0))
+    .sort((a, b) => {
+      if (a.balance !== b.balance) return b.balance > a.balance ? 1 : -1;
+      // Desempate estable y determinístico cuando dos saldos son iguales.
+      return a.username.localeCompare(b.username);
+    })
     .slice(0, limit);
 }

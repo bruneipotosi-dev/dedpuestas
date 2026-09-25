@@ -22,17 +22,27 @@ describe("ranking (HU-20)", () => {
       data: { playerId: player.id, type: "muere_semana", question: "?", closesAt: new Date(Date.now() + 3600_000) },
     });
     const si = await prisma.outcome.create({ data: { marketId: market.id, label: "Sí", sort: 0 } });
-    await prisma.outcome.create({ data: { marketId: market.id, label: "No", sort: 1 } });
+    const no = await prisma.outcome.create({ data: { marketId: market.id, label: "No", sort: 1 } });
 
-    await placeBet(bob.userId, si.id, 500n); // bob queda en 500
-    await resolveMarket(market.id, si.id); // bob gana todo el bote (único apostador): 500
+    await placeBet(alice.userId, no.id, 300n); // alice pierde
+    await placeBet(bob.userId, si.id, 500n); // bob gana
+    await resolveMarket(market.id, si.id); // bob se lleva todo el bote (800)
 
     const ranking = await getRanking();
     const [first, second] = ranking;
     expect(first.username).toBe("bobr");
-    expect(first.balance).toBe(1000n); // 1000 - 500 + 500 (gana el bote entero)
+    expect(first.balance).toBe(1300n); // 1000 - 500 + 800
     expect(second.username).toBe("alicer");
-    expect(second.balance).toBe(1000n);
+    expect(second.balance).toBe(700n); // 1000 - 300, perdió
+  });
+
+  it("desempata saldos iguales por username, de forma determinística", async () => {
+    await registerUser("zoe", "milcontraseña");
+    await registerUser("ana", "milcontraseña");
+
+    // Ambas se quedan con el bono de 1000 sin apostar: saldos empatados.
+    const ranking = await getRanking();
+    expect(ranking.map((r) => r.username)).toEqual(["ana", "zoe"]);
   });
 
   it("no incluye al admin en el ranking", async () => {
