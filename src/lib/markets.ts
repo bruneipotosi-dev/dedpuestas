@@ -1,8 +1,54 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { nextMarketCloseGmt6 } from "@/lib/time";
 
 export const MIN_BET = 10n;
+
+/**
+ * Botón "Crear mercados de la semana" (HU-30): genera "¿Muere esta semana?"
+ * para todos los jugadores vivos que todavía no tengan uno abierto, con
+ * cierre por defecto a las 15:00 GMT-6 (RN-6).
+ */
+export async function createWeeklyMarkets(): Promise<{ created: number }> {
+  const alivePlayers = await prisma.player.findMany({ where: { status: "alive" } });
+  const closesAt = nextMarketCloseGmt6();
+
+  const existingOpen = await prisma.market.findMany({
+    where: { type: "muere_semana", status: "open", playerId: { in: alivePlayers.map((p) => p.id) } },
+    select: { playerId: true },
+  });
+  const alreadyHasMarket = new Set(existingOpen.map((m) => m.playerId));
+
+  let created = 0;
+  for (const player of alivePlayers) {
+    if (alreadyHasMarket.has(player.id)) continue;
+    const market = await prisma.market.create({
+      data: {
+        playerId: player.id,
+        type: "muere_semana",
+        question: `¿${player.nick} muere esta semana?`,
+        closesAt,
+      },
+    });
+    await prisma.outcome.createMany({
+      data: [
+        { marketId: market.id, label: "Muere", sort: 0 },
+        { marketId: market.id, label: "Sobrevive", sort: 1 },
+      ],
+    });
+    created++;
+  }
+
+  return { created };
+}
+
+export async function listMarketsForAdmin() {
+  return prisma.market.findMany({
+    include: { player: true, outcomes: true },
+    orderBy: { closesAt: "desc" },
+  });
+}
 
 export type PlaceBetResult =
   | { ok: true; betId: string }
