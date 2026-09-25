@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserBets } from "@/lib/markets";
+import { getSiteOrigin } from "@/lib/site-url";
+
+function shareUrl(origin: string, playerSlug: string, question: string, outcomeLabel: string): string {
+  const playerUrl = `${origin}/jugador/${playerSlug}`;
+  const text = `Aposté en Dedpuestas: "${question}" → ${outcomeLabel}. ¿Vos qué creés?`;
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(playerUrl)}`;
+}
 
 export const metadata = { title: "Mis apuestas · Dedpuestas" };
 
@@ -26,7 +33,7 @@ export default async function MisApuestasPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const bets = await getUserBets(user.id);
+  const [bets, origin] = await Promise.all([getUserBets(user.id), getSiteOrigin()]);
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "var(--s-4)", width: "100%" }}>
@@ -59,9 +66,19 @@ export default async function MisApuestasPage() {
                   <span className="num">{bet.amount.toString()}</span> Dedines
                 </div>
               </div>
-              <span style={{ color: result.color, fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }} className="num">
-                {result.text}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "var(--s-1)" }}>
+                <span style={{ color: result.color, fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }} className="num">
+                  {result.text}
+                </span>
+                <a
+                  href={shareUrl(origin, bet.outcome.market.player.slug, bet.outcome.market.question, bet.outcome.label)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "var(--fs-xs)", color: "var(--brand-text)" }}
+                >
+                  Compartir en X
+                </a>
+              </div>
             </article>
           );
         })}

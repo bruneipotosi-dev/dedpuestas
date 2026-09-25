@@ -2,14 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/session";
-import { createWeeklyMarkets, resolveMarket, voidMarket } from "@/lib/markets";
-import { updatePlayerStatus } from "@/lib/admin/players";
+import { createWeeklyMarkets, createGulagMarkets, resolveMarket, voidMarket } from "@/lib/markets";
+import { updatePlayerStatus, setPlayerOptedOut } from "@/lib/admin/players";
 import { resetUserPassword } from "@/lib/admin/users";
 import type { PlayerStatus } from "@/generated/prisma/client";
 
 export async function createWeeklyMarketsAction(): Promise<void> {
   await requireAdmin();
   await createWeeklyMarkets();
+  revalidatePath("/admin/mercados");
+  revalidatePath("/");
+}
+
+export async function createGulagMarketsAction(): Promise<void> {
+  await requireAdmin();
+  await createGulagMarkets();
   revalidatePath("/admin/mercados");
   revalidatePath("/");
 }
@@ -55,6 +62,14 @@ export async function updatePlayerStatusAction(formData: FormData): Promise<void
   await updatePlayerStatus(playerId, status);
   revalidatePath("/admin/jugadores");
   revalidatePath("/");
+}
+
+export async function setPlayerOptedOutAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const playerId = Number(formData.get("playerId"));
+  const optedOut = formData.get("optedOut") === "true";
+  await setPlayerOptedOut(playerId, optedOut);
+  revalidatePath("/admin/jugadores");
 }
 
 export type ResetPasswordState = { error: string | null; tempPassword?: string };

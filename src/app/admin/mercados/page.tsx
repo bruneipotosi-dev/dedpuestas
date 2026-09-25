@@ -1,5 +1,5 @@
 import { listMarketsForAdmin } from "@/lib/markets";
-import { createWeeklyMarketsAction } from "@/app/admin/actions";
+import { createWeeklyMarketsAction, createGulagMarketsAction } from "@/app/admin/actions";
 import { ResolveMarketForm } from "@/components/admin/resolve-market-form";
 
 export const metadata = { title: "Mercados · Admin · Dedpuestas" };
@@ -20,22 +20,40 @@ export default async function AdminMercadosPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-xl)" }}>Mercados</h1>
-        <form action={createWeeklyMarketsAction}>
-          <button
-            type="submit"
-            style={{
-              background: "var(--brand)",
-              color: "var(--bg)",
-              border: "none",
-              borderRadius: "var(--r-lg)",
-              padding: "var(--s-2) var(--s-3)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Crear mercados de la semana
-          </button>
-        </form>
+        <div style={{ display: "flex", gap: "var(--s-2)" }}>
+          <form action={createGulagMarketsAction}>
+            <button
+              type="submit"
+              style={{
+                background: "var(--gulag)",
+                color: "var(--bg)",
+                border: "none",
+                borderRadius: "var(--r-lg)",
+                padding: "var(--s-2) var(--s-3)",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Crear mercados del Gulag
+            </button>
+          </form>
+          <form action={createWeeklyMarketsAction}>
+            <button
+              type="submit"
+              style={{
+                background: "var(--brand)",
+                color: "var(--bg)",
+                border: "none",
+                borderRadius: "var(--r-lg)",
+                padding: "var(--s-2) var(--s-3)",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Crear mercados de la semana
+            </button>
+          </form>
+        </div>
       </div>
 
       <section>

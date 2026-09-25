@@ -13,6 +13,11 @@ export async function updatePlayerStatus(playerId: number, status: PlayerStatus)
   });
 }
 
+/** Retiro de un streamer (HU-24): no se le crean mercados nuevos. */
+export async function setPlayerOptedOut(playerId: number, optedOut: boolean): Promise<void> {
+  await prisma.player.update({ where: { id: playerId }, data: { optedOut } });
+}
+
 export async function listPlayersForAdmin() {
   return prisma.player.findMany({
     include: { team: true },
