@@ -14,48 +14,68 @@ type Props = {
 
 const initialState: BetActionState = { error: null };
 
+function outcomeColors(label: string): { text: string; bg: string; border: string } {
+  if (label === "Muere") return { text: "var(--die-text)", bg: "var(--die-soft)", border: "var(--die-border)" };
+  if (label === "Sobrevive") return { text: "var(--live-text)", bg: "var(--live-soft)", border: "var(--live-border)" };
+  return { text: "var(--brand-text)", bg: "var(--surface)", border: "var(--line)" };
+}
+
 export function BetForm({ outcomes, outcomeTotals, pot, balance }: Props) {
   const [selected, setSelected] = useState(outcomes[0]?.id ?? "");
   const [amount, setAmount] = useState("10");
   const [state, formAction, pending] = useActionState(placeBetAction, initialState);
 
+  const potN = BigInt(pot);
+
   const estimate = useMemo(() => {
     const amountN = BigInt(Number.isFinite(Number(amount)) && amount !== "" ? Math.max(0, Math.floor(Number(amount))) : 0);
     if (amountN <= 0n) return null;
-    const potN = BigInt(pot);
     const outcomeTotalN = BigInt(outcomeTotals[selected] ?? "0");
     const newPot = potN + amountN;
     const newOutcomeTotal = outcomeTotalN + amountN;
     // Si el mercado cerrara ahora mismo, con nadie más apostando (HU-11).
     const payout = (amountN * newPot) / newOutcomeTotal;
     return payout;
-  }, [amount, selected, pot, outcomeTotals]);
+  }, [amount, selected, potN, outcomeTotals]);
 
   return (
     <form
       action={formAction}
-      style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)", marginTop: "var(--s-2)" }}
+      style={{ display: "flex", flexDirection: "column", gap: "var(--s-2)" }}
     >
       <input type="hidden" name="outcomeId" value={selected} />
       <div style={{ display: "flex", gap: "var(--s-2)" }}>
-        {outcomes.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => setSelected(o.id)}
-            style={{
-              flex: 1,
-              padding: "var(--s-2)",
-              borderRadius: "var(--r-md)",
-              border: `1px solid ${selected === o.id ? "var(--brand)" : "var(--line)"}`,
-              background: selected === o.id ? "var(--surface)" : "transparent",
-              color: "var(--text)",
-              cursor: "pointer",
-            }}
-          >
-            {o.label}
-          </button>
-        ))}
+        {outcomes.map((o) => {
+          const colors = outcomeColors(o.label);
+          const p = potN > 0n ? Math.round((Number(BigInt(outcomeTotals[o.id] ?? "0")) / Number(potN)) * 100) : 0;
+          const isSelected = selected === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setSelected(o.id)}
+              style={{
+                flex: 1,
+                display: "grid",
+                gap: 4,
+                textAlign: "left",
+                padding: "var(--s-2) var(--s-3)",
+                borderRadius: "var(--r-md)",
+                border: `2px solid ${isSelected ? colors.border : "var(--line)"}`,
+                background: isSelected ? colors.bg : "transparent",
+                color: isSelected ? colors.text : "var(--text)",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: "var(--fs-xs)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                {o.label}
+              </span>
+              <span className="num" style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-xl)" }}>
+                {p}%
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <input
@@ -100,7 +120,7 @@ export function BetForm({ outcomes, outcomeTotals, pot, balance }: Props) {
           border: "none",
           borderRadius: "var(--r-lg)",
           padding: "var(--s-2)",
-          fontWeight: 600,
+          fontWeight: 700,
           cursor: "pointer",
         }}
       >

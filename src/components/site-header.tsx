@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { getUserBalance } from "@/lib/ledger";
 import { logoutAction } from "@/app/(auth)/actions";
+import { DedinIcon } from "./dedin-icon";
 
 const linkStyle = { color: "var(--text)", textDecoration: "none" };
 
@@ -37,8 +38,20 @@ export async function SiteHeader() {
               Admin
             </Link>
           )}
-          <span className="num" style={{ color: "var(--dedines)" }}>
-            {balance?.toString()} Dedines
+          <span
+            className="num"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--s-1)",
+              background: "var(--surface)",
+              border: "1px solid var(--line)",
+              borderRadius: 999,
+              padding: "var(--s-1) var(--s-3) var(--s-1) var(--s-1)",
+              fontWeight: 700,
+            }}
+          >
+            <DedinIcon size={18} /> {balance?.toString()}
           </span>
           <form action={logoutAction}>
             <button

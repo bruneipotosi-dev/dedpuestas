@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getPlayerProfile } from "@/lib/players";
 import { getCurrentUser } from "@/lib/session";
 import { ReportForm } from "./report-form";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 const statusLabel: Record<string, string> = { alive: "Vivo", gulag: "Gulag", eliminated: "Eliminado" };
 
@@ -47,16 +48,7 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
         textAlign: "center",
       }}
     >
-      {player.avatarUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- avatar externo (mc-heads.net)
-        <img
-          src={player.avatarUrl}
-          alt={player.nick}
-          width={96}
-          height={96}
-          style={{ borderRadius: "var(--r-lg)" }}
-        />
-      )}
+      <PlayerAvatar avatarUrl={player.avatarUrl} nick={player.nick} size={96} />
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-2xl)" }}>{player.nick}</h1>
       <p style={{ color: "var(--text-2)" }}>
         {player.team?.name ?? "Sin equipo"} · {statusLabel[player.status]}
