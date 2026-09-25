@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { hash } from "@node-rs/argon2";
 import { PrismaClient, PlayerStatus } from "../src/generated/prisma/client";
 
 const prisma = new PrismaClient();
@@ -61,6 +62,35 @@ async function main() {
     });
   }
   console.log(`Jugadores cargados: ${data.players.length}`);
+
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminUsername && adminPassword) {
+    const username = adminUsername.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (!existing) {
+      const passwordHash = await hash(adminPassword, {
+        algorithm: 2,
+        memoryCost: 19456,
+        timeCost: 2,
+        parallelism: 1,
+      });
+      await prisma.user.create({
+        data: {
+          username,
+          role: "admin",
+          authIdentities: {
+            create: { provider: "password", passwordHash },
+          },
+        },
+      });
+      console.log(`Admin creado: ${username}`);
+    } else {
+      console.log(`Admin "${username}" ya existía, no se tocó.`);
+    }
+  } else {
+    console.log("ADMIN_USERNAME/ADMIN_PASSWORD no definidos: no se crea admin.");
+  }
 }
 
 main()
