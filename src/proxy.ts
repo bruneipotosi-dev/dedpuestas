@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
  * el pie de página normales, o el layout "limpio" del overlay de OBS
  * (HU-23) — ver src/app/layout.tsx.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.set("x-pathname", request.nextUrl.pathname);
   return NextResponse.next({ request: { headers } });
