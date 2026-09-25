@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserBets } from "@/lib/markets";
 import { getSiteOrigin } from "@/lib/site-url";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 function shareUrl(origin: string, playerSlug: string, question: string, outcomeLabel: string): string {
   const playerUrl = `${origin}/jugador/${playerSlug}`;
@@ -59,12 +60,16 @@ export default async function MisApuestasPage() {
                 gap: "var(--s-3)",
               }}
             >
-              <div>
-                <div>{bet.outcome.market.question}</div>
-                <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
-                  {bet.outcome.market.player && <>{bet.outcome.market.player.nick} · </>}
-                  Apostaste a &quot;{bet.outcome.label}&quot; · <span className="num">{bet.amount.toString()}</span>{" "}
-                  Dedines
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                {bet.outcome.market.player && (
+                  <PlayerAvatar avatarUrl={bet.outcome.market.player.avatarUrl} nick={bet.outcome.market.player.nick} size={32} />
+                )}
+                <div>
+                  <div>{bet.outcome.market.question}</div>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
+                    Apostaste a &quot;{bet.outcome.label}&quot; · <span className="num">{bet.amount.toString()}</span>{" "}
+                    Dedines
+                  </div>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "var(--s-1)" }}>

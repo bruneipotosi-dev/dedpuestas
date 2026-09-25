@@ -1,5 +1,6 @@
 import { listPlayersForAdmin } from "@/lib/admin/players";
 import { updatePlayerStatusAction, setPlayerOptedOutAction } from "@/app/admin/actions";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 export const metadata = { title: "Jugadores · Admin · Dedpuestas" };
 
@@ -39,12 +40,15 @@ export default async function AdminJugadoresPage() {
               flexWrap: "wrap",
             }}
           >
-            <div>
-              <strong>{player.nick}</strong>{" "}
-              <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
-                {player.team?.name ?? "Sin equipo"} · {statusLabel[player.status]}
-                {player.optedOut && <span style={{ color: "var(--gulag-text)" }}> · Retirado (HU-24)</span>}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+              <PlayerAvatar avatarUrl={player.avatarUrl} nick={player.nick} size={32} />
+              <div>
+                <strong>{player.nick}</strong>{" "}
+                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>
+                  {player.team?.name ?? "Sin equipo"} · {statusLabel[player.status]}
+                  {player.optedOut && <span style={{ color: "var(--gulag-text)" }}> · Retirado (HU-24)</span>}
+                </span>
+              </div>
             </div>
             <div style={{ display: "flex", gap: "var(--s-2)" }}>
               {nextStatuses[player.status]?.map((next) => (

@@ -176,7 +176,7 @@ export async function placeBet(
 
 export type OpenMarket = Prisma.MarketGetPayload<{
   include: { player: { include: { team: true } }; outcomes: true };
-}> & { outcomeTotals: Record<string, bigint>; pot: bigint };
+}> & { outcomeTotals: Record<string, bigint>; pot: bigint; betCount: number };
 
 /** Mercados abiertos con el % de Dedines por opción (HU-10). */
 export async function getOpenMarkets(): Promise<OpenMarket[]> {
@@ -195,15 +195,18 @@ export async function getOpenMarkets(): Promise<OpenMarket[]> {
       by: ["outcomeId"],
       where: { outcome: { marketId: market.id } },
       _sum: { amount: true },
+      _count: true,
     });
     const outcomeTotals: Record<string, bigint> = {};
     let pot = 0n;
+    let betCount = 0;
     for (const outcome of market.outcomes) {
-      const total = totals.find((t) => t.outcomeId === outcome.id)?._sum.amount ?? 0n;
-      outcomeTotals[outcome.id] = total;
-      pot += total;
+      const row = totals.find((t) => t.outcomeId === outcome.id);
+      outcomeTotals[outcome.id] = row?._sum.amount ?? 0n;
+      pot += row?._sum.amount ?? 0n;
+      betCount += row?._count ?? 0;
     }
-    results.push({ ...market, outcomeTotals, pot });
+    results.push({ ...market, outcomeTotals, pot, betCount });
   }
   return results;
 }
