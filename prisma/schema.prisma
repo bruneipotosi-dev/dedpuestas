@@ -3,8 +3,13 @@
 // necesarias para HU-10 (avatar) y HU-31 (fecha de eliminación); ver data/seed-dedsafio4.json.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client"
+  output        = "../src/generated/prisma"
+  // "native" para tu host / tests; "linux-musl-openssl-3.0.x" para el
+  // contenedor Alpine de compose.yaml (dev) que monta este mismo directorio
+  // generado. El Dockerfile de producción genera el suyo propio dentro del
+  // build (siempre Alpine), así que no depende de esto.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -62,11 +67,14 @@ model User {
 }
 
 model AuthIdentity {
-  id             String       @id @default(uuid())
-  userId         String       @map("user_id")
-  provider       AuthProvider
-  providerUserId String?      @map("provider_user_id")
-  passwordHash   String?      @map("password_hash")
+  id               String       @id @default(uuid())
+  userId           String       @map("user_id")
+  provider         AuthProvider
+  providerUserId   String?      @map("provider_user_id")
+  passwordHash     String?      @map("password_hash")
+  failedLoginCount Int          @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?    @map("locked_until")
+  mustChangePassword Boolean    @default(false) @map("must_change_password")
 
   user User @relation(fields: [userId], references: [id])
 

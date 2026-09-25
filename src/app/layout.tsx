@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteHeader } from "@/components/site-header";
 import { LegalFooter } from "@/components/legal-footer";
 import "./globals.css";
 
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es">
       <body>
+        <SiteHeader />
         {children}
         <LegalFooter />
       </body>

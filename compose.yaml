@@ -27,14 +27,22 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
       SESSION_SECRET: ${SESSION_SECRET}
-      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
       NODE_ENV: development
+      # Turbopack (next dev) no resuelve bien la ruta del motor de Prisma
+      # cuando el cliente generado vive fuera de node_modules/.prisma (acá
+      # vive en src/generated/prisma). Se lo indicamos directo para evitar
+      # el "could not locate the Query Engine".
+      PRISMA_QUERY_ENGINE_LIBRARY: /app/src/generated/prisma/libquery_engine-linux-musl-openssl-3.0.x.so.node
     ports:
       - "3000:3000"
     volumes:
       - .:/app
       - app_node_modules:/app/node_modules
+      # El contenedor corre como root y escribe acá; sin esto, esas escrituras
+      # quedan en tu carpeta del host con dueño root y no podés borrarlas.
+      - app_next_cache:/app/.next
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +50,4 @@ services:
 volumes:
   db_data:
   app_node_modules:
+  app_next_cache:

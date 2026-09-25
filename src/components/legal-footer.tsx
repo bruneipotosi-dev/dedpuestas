@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function LegalFooter() {
   return (
     <footer
@@ -10,7 +12,10 @@ export function LegalFooter() {
         borderTop: "1px solid var(--line)",
       }}
     >
-      Dedines sin valor real · Sitio de fans no oficial
+      Dedines sin valor real · Sitio de fans no oficial ·{" "}
+      <Link href="/legal" style={{ color: "var(--text-2)", textDecoration: "underline" }}>
+        Aviso legal
+      </Link>
     </footer>
   );
 }
