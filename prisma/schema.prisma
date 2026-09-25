@@ -1,0 +1,184 @@
+// Modelo de datos — ver docs/03-arquitectura.md para el ER completo y las decisiones.
+// Extensiones sobre el ER de arquitectura (avatarUrl, trackerStreamerSlug, eliminatedAt en Player):
+// necesarias para HU-10 (avatar) y HU-31 (fecha de eliminación); ver data/seed-dedsafio4.json.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  fan
+  admin
+}
+
+enum AuthProvider {
+  password
+  kick
+  google
+}
+
+enum PlayerStatus {
+  alive
+  gulag
+  eliminated
+}
+
+enum MarketStatus {
+  open
+  closed
+  resolved
+  void
+}
+
+enum LedgerReason {
+  signup_bonus
+  daily_bonus
+  weekly_rescue
+  bet
+  payout
+  refund
+  rounding
+  admin_adjustment
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  role      UserRole @default(fan)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  authIdentities AuthIdentity[]
+  sessions       Session[]
+  ledgerEntries  LedgerEntry[]
+  bets           Bet[]
+
+  @@map("users")
+}
+
+model AuthIdentity {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  provider       AuthProvider
+  providerUserId String?      @map("provider_user_id")
+  passwordHash   String?      @map("password_hash")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("auth_identities")
+}
+
+model Session {
+  id        String   @id
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Team {
+  id         String  @id
+  name       String
+  colorToken String? @map("color_token")
+
+  players Player[]
+
+  @@map("teams")
+}
+
+model Player {
+  id                   Int          @id @default(autoincrement())
+  slug                 String       @unique
+  nick                 String
+  teamId               String?      @map("team_id")
+  kickChannel          String?      @map("kick_channel")
+  trackerStreamerSlug  String?      @map("tracker_streamer_slug")
+  avatarUrl            String?      @map("avatar_url")
+  status               PlayerStatus @default(alive)
+  eliminatedAt         DateTime?    @map("eliminated_at")
+  optedOut             Boolean      @default(false) @map("opted_out")
+
+  team    Team?    @relation(fields: [teamId], references: [id])
+  markets Market[]
+
+  @@map("players")
+}
+
+model Market {
+  id                String       @id @default(uuid())
+  playerId          Int          @map("player_id")
+  type              String
+  question          String
+  closesAt          DateTime     @map("closes_at")
+  status            MarketStatus @default(open)
+  winningOutcomeId  String?      @unique @map("winning_outcome_id")
+  proofUrl          String?      @map("proof_url")
+
+  player        Player        @relation(fields: [playerId], references: [id])
+  outcomes      Outcome[]      @relation("MarketOutcomes")
+  winningOutcome Outcome?      @relation("MarketWinningOutcome", fields: [winningOutcomeId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([playerId])
+  @@index([status, closesAt])
+  @@map("markets")
+}
+
+model Outcome {
+  id       String @id @default(uuid())
+  marketId String @map("market_id")
+  label    String
+  sort     Int
+
+  market        Market  @relation("MarketOutcomes", fields: [marketId], references: [id])
+  winningMarket Market? @relation("MarketWinningOutcome")
+  bets          Bet[]
+
+  @@index([marketId])
+  @@map("outcomes")
+}
+
+model Bet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  outcomeId String   @map("outcome_id")
+  amount    BigInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user          User          @relation(fields: [userId], references: [id])
+  outcome       Outcome       @relation(fields: [outcomeId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([userId])
+  @@index([outcomeId])
+  @@map("bets")
+}
+
+// Libro de movimientos inmutable (RN-8): nunca se hace UPDATE/DELETE sobre esta
+// tabla. El saldo de un usuario es SUM(delta) — ver docs/adr/0002.
+model LedgerEntry {
+  id        BigInt       @id @default(autoincrement())
+  userId    String       @map("user_id")
+  delta     BigInt
+  reason    LedgerReason
+  betId     String?      @map("bet_id")
+  marketId  String?      @map("market_id")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  user   User    @relation(fields: [userId], references: [id])
+  bet    Bet?    @relation(fields: [betId], references: [id])
+  market Market? @relation(fields: [marketId], references: [id])
+
+  @@index([userId])
+  @@map("ledger_entries")
+}
