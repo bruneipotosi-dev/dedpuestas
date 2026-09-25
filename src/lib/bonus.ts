@@ -1,16 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { startOfTodayGmt6 } from "@/lib/time";
 
 const DAILY_BONUS = 100n;
 const WEEKLY_RESCUE = 200n;
-const GMT6_OFFSET_MS = 6 * 60 * 60 * 1000;
-
-/** Medianoche de "hoy" en GMT-6 (RN-2), como instante UTC. */
-function startOfTodayGmt6(): Date {
-  const local = new Date(Date.now() - GMT6_OFFSET_MS);
-  const localMidnight = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate());
-  return new Date(localMidnight + GMT6_OFFSET_MS);
-}
 
 export type ClaimResult = { ok: true } | { ok: false; reason: "already_claimed" };
 
